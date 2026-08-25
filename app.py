@@ -4283,9 +4283,6 @@ def run_assessment(all_text):
 근거: [가이드라인 요건 기준 설명]
 ---
 
-이 영역 평가 완료 후 충족/미충족 건수만 간단히 기재하세요:
-[영역명] 소계 — 충족: X건 / 미충족: Y건"""
-
         user_message = f"{instructions}\n\n===== 공시 문서 전체 텍스트 =====\n\n{all_text}"
 
         response = client.messages.create(
@@ -4306,12 +4303,11 @@ def run_assessment(all_text):
 
         # 소계 파싱
         import re
-        met_match = re.search(r'충족:\s*(\d+)건', area_result)
-        unmet_match = re.search(r'미충족:\s*(\d+)건', area_result)
-        if met_match:
-            total_met += int(met_match.group(1))
-        if unmet_match:
-            total_unmet += int(unmet_match.group(1))
+        # 모델의 자체 집계 대신 실제 판정 라인을 직접 카운트
+        met_count = len(re.findall(r'판정:\s*충족(?!\s*/\s*미충족)', area_result))
+        unmet_count = len(re.findall(r'판정:\s*미충족', area_result))
+        total_met += met_count
+        total_unmet += unmet_count
 
     total = total_met + total_unmet
     rate = f"{(total_met/total*100):.1f}%" if total > 0 else "N/A"
