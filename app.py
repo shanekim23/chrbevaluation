@@ -4312,13 +4312,14 @@ def run_assessment(all_text):
     total = total_met + total_unmet
     rate = f"{(total_met/total*100):.1f}%" if total > 0 else "N/A"
 
-    summary = f"""---
-
-## 최종 요약표
-- 전체 기준 수: {total}
-- 충족: {total_met}
-- 미충족: {total_unmet}
-- 충족률: {rate}"""
+    summary = (
+        "---\n\n"
+        "## 최종 요약표\n"
+        "- 전체 기준 수: " + str(total) + "\n"
+        "- 충족: " + str(total_met) + "\n"
+        "- 미충족: " + str(total_unmet) + "\n"
+        "- 충족률: " + rate
+    )
 
     return "\n\n".join(all_results) + "\n\n" + summary
 
