@@ -4281,7 +4281,7 @@ def run_assessment(all_text):
 증거: [공시 문서 인용 또는 '관련 내용 없음']
 판정: 충족 / 미충족
 근거: [가이드라인 요건 기준 설명]
----
+---"""
 
         user_message = f"{instructions}\n\n===== 공시 문서 전체 텍스트 =====\n\n{all_text}"
 
