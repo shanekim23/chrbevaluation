@@ -4283,7 +4283,7 @@ def run_assessment(all_text):
 
     response = client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=8000,
+        max_tokens=16000,
         system=CHRB_GUIDELINE,
         messages=[
             {"role": "user", "content": user_message}
