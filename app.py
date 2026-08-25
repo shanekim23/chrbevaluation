@@ -4256,11 +4256,21 @@ def extract_text(file_bytes, filename):
 # 평가 함수
 # ---------------------------------------------------------------------------
 def run_assessment(all_text):
-    """
-    추출된 공시 문서 전체 텍스트를 받아 Claude API를 호출하고,
-    CHRB 가이드라인 기준 평가 결과 텍스트를 반환합니다.
-    """
-    instructions = """아래는 평가 대상 기업의 공시 문서입니다. 반드시 가이드라인의 모든 세부기준(총 40개 요소)을 빠짐없이 평가하세요. 중간에 멈추지 말고 E07까지 완료한 후 요약표를 작성하세요. 요약표의 전체 기준 수는 위에서 평가한 실제 항목 수를 직접 세어서 기재하세요. 추정하거나 기억에 의존하지 말고, 출력한 "기준:" 항목의 개수를 하나씩 세어 정확히 기입하세요. 가이드라인의 모든 세부기준에 대해 순서대로 다음을 수행하세요:
+    areas = [
+        ("A. 정책 약속 (A01, A02, A08)", "A01, A02, A08 지표의 모든 세부요소"),
+        ("C. 기업 문화 및 관리 시스템 내 인권 존중의 내재화 (C01)", "C01 지표의 모든 세부요소"),
+        ("D. 인권 실사 (D01, D02, D03, D04, D05)", "D01, D02, D03, D04, D05 지표의 모든 세부요소"),
+        ("E. 구제 및 고충처리 메커니즘 (E01, E02, E07)", "E01, E02, E07 지표의 모든 세부요소"),
+    ]
+
+    all_results = []
+    total_met = 0
+    total_unmet = 0
+
+    for area_name, area_scope in areas:
+        instructions = f"""반드시 {area_scope}를 빠짐없이 평가하세요. 중간에 멈추지 말고 해당 영역의 모든 요소를 완료하세요.
+
+아래는 평가 대상 기업의 공시 문서입니다. {area_name} 영역의 모든 세부기준에 대해 순서대로 다음을 수행하세요:
 1. 공시 문서에서 해당 기준과 관련된 문단을 찾아 인용하세요
 2. 가이드라인의 충족 요건과 대조하여 충족/미충족을 판정하세요
 3. 판정 근거를 1-2문장으로 명시하세요
@@ -4273,25 +4283,48 @@ def run_assessment(all_text):
 근거: [가이드라인 요건 기준 설명]
 ---
 
-모든 기준 처리 후 다음 요약표를 추가하세요:
-- 전체 기준 수:
-- 충족:
-- 미충족:
-- 충족률:"""
+이 영역 평가 완료 후 충족/미충족 건수만 간단히 기재하세요:
+[영역명] 소계 — 충족: X건 / 미충족: Y건"""
 
-    user_message = f"{instructions}\n\n===== 공시 문서 전체 텍스트 =====\n\n{all_text}"
+        user_message = f"{instructions}\n\n===== 공시 문서 전체 텍스트 =====\n\n{all_text}"
 
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=16000,
-        system=CHRB_GUIDELINE,
-        messages=[
-            {"role": "user", "content": user_message}
-        ]
-    )
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=8000,
+            system=[
+                {
+                    "type": "text",
+                    "text": CHRB_GUIDELINE,
+                    "cache_control": {"type": "ephemeral"}
+                }
+            ],
+            messages=[{"role": "user", "content": user_message}]
+        )
 
-    return response.content[0].text
+        area_result = response.content[0].text
+        all_results.append(f"## {area_name}\n\n{area_result}")
 
+        # 소계 파싱
+        import re
+        met_match = re.search(r'충족:\s*(\d+)건', area_result)
+        unmet_match = re.search(r'미충족:\s*(\d+)건', area_result)
+        if met_match:
+            total_met += int(met_match.group(1))
+        if unmet_match:
+            total_unmet += int(unmet_match.group(1))
+
+    total = total_met + total_unmet
+    rate = f"{(total_met/total*100):.1f}%" if total > 0 else "N/A"
+
+    summary = f"""---
+
+## 최종 요약표
+- 전체 기준 수: {total}
+- 충족: {total_met}
+- 미충족: {total_unmet}
+- 충족률: {rate}"""
+
+    return "\n\n".join(all_results) + "\n\n" + summary
 
 # ---------------------------------------------------------------------------
 # API 키 처리
