@@ -4260,7 +4260,7 @@ def run_assessment(all_text):
     추출된 공시 문서 전체 텍스트를 받아 Claude API를 호출하고,
     CHRB 가이드라인 기준 평가 결과 텍스트를 반환합니다.
     """
-    instructions = """아래는 평가 대상 기업의 공시 문서입니다. 가이드라인의 모든 세부기준에 대해 순서대로 다음을 수행하세요:
+    instructions = """아래는 평가 대상 기업의 공시 문서입니다. 반드시 가이드라인의 모든 세부기준(총 40개 요소)을 빠짐없이 평가하세요. 중간에 멈추지 말고 E07까지 완료한 후 요약표를 작성하세요. 가이드라인의 모든 세부기준에 대해 순서대로 다음을 수행하세요:
 1. 공시 문서에서 해당 기준과 관련된 문단을 찾아 인용하세요
 2. 가이드라인의 충족 요건과 대조하여 충족/미충족을 판정하세요
 3. 판정 근거를 1-2문장으로 명시하세요
@@ -4283,7 +4283,7 @@ def run_assessment(all_text):
 
     response = client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=4000,
+        max_tokens=8000,
         system=CHRB_GUIDELINE,
         messages=[
             {"role": "user", "content": user_message}
