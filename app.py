@@ -9,7 +9,7 @@ import pathlib
 # 페이지 설정
 # ---------------------------------------------------------------------------
 st.set_page_config(
-    page_title="CHRB 평가 시스템",
+    page_title="CHRB 평가 시스템"",
     page_icon="🔍",
     layout="wide"
 )
